@@ -1,6 +1,7 @@
 const WebSocket = require("ws");
 const Redis = require("ioredis");
 const url = require("url");
+const uniq = require("lodash/uniq");
 
 function log(msg) {
   console.log(JSON.stringify({ at: new Date(), ...msg }));
@@ -20,6 +21,28 @@ process.on("EXIT", () => {
   });
 });
 
+function subscribe(channel, clientId) {
+  subs[channel] = uniq([...(subs[channel] || []), clientId]);
+}
+
+function unsubscribe(channel, clientId) {
+  subs[channel] = (subs[channel] || []).filter(id => id !== clientId);
+}
+
+function send(channel, msgString) {
+  const clientIds = subs[channel];
+
+  if (clientIds) {
+    clientIds.forEach(clientId => {
+      if (clients[clientId]) {
+        clients[clientId].client.send(msgString);
+      } else {
+        unsubscribe(channel, clientId);
+      }
+    });
+  }
+}
+
 const redis = new Redis(process.env.REDIS_URL);
 redis.subscribe("socket-broadcast");
 
@@ -28,30 +51,25 @@ redis.on("message", async (channel, message) => {
   const splitAt = message.indexOf(":");
   if (splitAt === -1) {
     log({
-      at: new Date(),
       event: "invalidRedisMessage",
       message
     });
     return;
   }
 
-  const msgOp = msg.slice(0, 1);
+  const msgOp = message.slice(0, 1);
   const msgChannel = message.slice(1, splitAt);
   const msgString = message.slice(splitAt + 1);
-  const clientIds = subs[msgChannel];
 
-  if (msgOp === 0) {
-  } else if (msgOp === 1) {
-    if (clientIds) {
-      clientIds.forEach(clientId => {
-        if (clients[clientId]) {
-          clients[clientId].client.send(msgString);
-        } else {
-          // clean up missing connection
-          subs[msgChannel] = subs[msgChannel].filter(id => id !== clientId);
-        }
-      });
-    }
+  if (msgOp === "0") {
+    log({event: "subscribe", msgChannel, msgString});
+    subscribe(msgChannel, msgString);
+  } else if (msgOp === "1") {
+    log({event: "unsubscribe", msgChannel, msgString});
+    unsubscribe(msgChannel, msgString);
+  } else if (msgOp === "2") {
+    log({event: "send", msgChannel});
+    send(msgChannel, msgString);
   }
 });
 
