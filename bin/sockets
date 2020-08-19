@@ -1,0 +1,90 @@
+const WebSocket = require("ws");
+const Redis = require("ioredis");
+const url = require("url");
+
+function log(msg) {
+  console.log(JSON.stringify({ at: new Date(), ...msg }));
+}
+
+const socketServer = new WebSocket.Server({
+  port: process.env.PORT
+});
+
+let clients = {};
+let subs = {};
+
+// on process exit, close all connections
+process.on("EXIT", () => {
+  Object.values(clients).forEach(({ client }) => {
+    client.close();
+  });
+});
+
+const redis = new Redis(process.env.REDIS_URL);
+redis.subscribe("socket-broadcast");
+
+// when redis receives a message on socket-broadcast
+redis.on("message", async (channel, message) => {
+  const splitAt = message.indexOf(":");
+  if (splitAt === -1) {
+    log({
+      at: new Date(),
+      event: "invalidRedisMessage",
+      message
+    });
+    return;
+  }
+
+  const msgOp = msg.slice(0, 1);
+  const msgChannel = message.slice(1, splitAt);
+  const msgString = message.slice(splitAt + 1);
+  const clientIds = subs[msgChannel];
+
+  if (msgOp === 0) {
+  } else if (msgOp === 1) {
+    if (clientIds) {
+      clientIds.forEach(clientId => {
+        if (clients[clientId]) {
+          clients[clientId].client.send(msgString);
+        } else {
+          // clean up missing connection
+          subs[msgChannel] = subs[msgChannel].filter(id => id !== clientId);
+        }
+      });
+    }
+  }
+});
+
+// handle server clients
+socketServer.on("connection", async function (client, request) {
+  const parsedUrl = url.parse(request.url, true);
+  const id = parsedUrl.query.id;
+  const ip = request.connection.remoteAddress;
+
+  log({ event: "socketConnect", id });
+
+  if (!id) {
+    log({ event: "noClientId" });
+    client.terminate();
+    return;
+  }
+
+  if (clients[id]) {
+    log({ event: "duplicateClient", id });
+    client.terminate();
+    return;
+  }
+
+  clients[id] = { client, ip };
+  client.on("close", async () => {
+    log({ event: "socketClose", id });
+
+    delete clients[id];
+  });
+
+  // error and disconnect if the client sends a message
+  client.on("message", async message => {
+    log({ event: "messageReceived", id });
+    client.terminate();
+  });
+});

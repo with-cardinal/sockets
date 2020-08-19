@@ -1,0 +1,29 @@
+{
+  "name": "sockets",
+  "version": "0.0.1",
+  "description": "Simple socket server",
+  "main": "index.js",
+  "bin": "./bin/sockets",
+  "scripts": {
+    "start": "PORT=3002 REDIS_URL=redis://localhost:6379 node ./bin/sockets",
+    "test": "jest --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/with-cardinal/sockets.git"
+  },
+  "keywords": ["ws", "websocket"],
+  "author": "With Cardinal, LLC",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/with-cardinal/sockets/issues"
+  },
+  "homepage": "https://github.com/with-cardinal/sockets#readme",
+  "dependencies": {
+    "ioredis": "^4.17.3",
+    "ws": "^7.3.1"
+  },
+  "devDependencies": {
+    "prettier": "^2.0.5"
+  }
+}
