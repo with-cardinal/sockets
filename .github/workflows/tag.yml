@@ -20,7 +20,7 @@ jobs:
       - name: Publish Docker
       - name: Build and push image
         run: |
-          docker build --build-arg commit=${GITHUB_SHA} -t docker.pkg.github.com/${{github.repository}}/sockets:${GITHUB_REF:10} .
+          docker build -t docker.pkg.github.com/${{github.repository}}/sockets:${GITHUB_REF:10} .
 
           echo ${{secrets.GITHUB_TOKEN}} | docker login docker.pkg.github.com -u cardinal --password-stdin
           docker push docker.pkg.github.com/${{github.repository}}/sockets:${GITHUB_REF:10}
