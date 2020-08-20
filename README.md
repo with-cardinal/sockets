@@ -5,7 +5,7 @@ A socket server focused on simplicity.
 ## Installing
 
 ```
-npm install -g sockets
+npm install -g @with-cardinal/sockets
 ```
 
 ## Starting the Server
