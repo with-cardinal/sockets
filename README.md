@@ -45,6 +45,14 @@ All communication between the service sending messages is done with Redis
 pub/sub. It provides a convenient and relatively high performance protocol for
 communication.
 
+## Avoiding Unwanted Clients
+
+Sockets implements two techniques for avoiding unwanted clients:
+
+1. It closes connections upon receiving any messages over the websocket.
+2. It closes any connections that do not have any subscriptions. This is checked
+   every `CHECK_INTERVAL` milliseconds.
+
 ## Library Documentation
 
 A simple library is included the NPM package. It includes simple functions
