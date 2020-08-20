@@ -19,7 +19,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
       - name: Publish Docker
         run: |
-          docker build -t docker.pkg.github.com/${{github.repository}}/sockets:${GITHUB_REF:10} .
+          docker build -t withcardinal/sockets:${GITHUB_REF:10} .
 
-          echo ${{secrets.GITHUB_TOKEN}} | docker login docker.pkg.github.com -u cardinal --password-stdin
-          docker push docker.pkg.github.com/${{github.repository}}/sockets:${GITHUB_REF:10}
+          echo ${{secrets.DOCKER_TOKEN} | docker login -u thecardinal --password-stdin
+          docker push withcardinal/sockets:${GITHUB_REF:10}
