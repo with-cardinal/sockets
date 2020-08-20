@@ -3,13 +3,14 @@ const WebSocket = require("ws");
 const Redis = require("ioredis");
 const url = require("url");
 const uniq = require("lodash/uniq");
+const { nanoid } = require("nanoid");
 
 function log(msg) {
   console.log(JSON.stringify({ at: new Date(), ...msg }));
 }
 
 let port = process.env.PORT || 3002;
-let redisUrl = process.env.REDIS_URL || "redis://localhost:6379"
+let redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 let checkInterval = process.env.CHECK_INTERVAL || 10000;
 
 const socketServer = new WebSocket.Server({
@@ -21,7 +22,7 @@ let subs = {};
 
 // on process exit, close all connections
 process.on("EXIT", () => {
-  log({event: "serverShutdown"});
+  log({ event: "serverShutdown" });
   Object.values(clients).forEach(({ client }) => {
     client.close();
   });
@@ -34,7 +35,7 @@ function subscribe(channel, clientId) {
 
 function unsubscribe(channel, clientId) {
   subs[channel] = (subs[channel] || []).filter(id => id !== clientId);
-  clients[clientId].subs =  clients[clientId].subs.filter(id => id !== channel);
+  clients[clientId].subs = clients[clientId].subs.filter(id => id !== channel);
 }
 
 function send(channel, msgString) {
@@ -54,12 +55,12 @@ function send(channel, msgString) {
 // if subs is empty, disconnect the client
 function checkSubs(clientId) {
   if (clients[clientId].subs.length === 0) {
-    log({event: "noSubs", clientId});
+    log({ event: "noSubs", clientId });
     clients[clientId].client.terminate();
   }
 }
 
-const redis = new Redis(redisUrl) ;
+const redis = new Redis(redisUrl);
 redis.subscribe("socket-broadcast");
 
 // when redis receives a message on socket-broadcast
@@ -92,26 +93,18 @@ redis.on("message", async (channel, message) => {
 // handle server clients
 socketServer.on("connection", async function (client, request) {
   const parsedUrl = url.parse(request.url, true);
-  const id = parsedUrl.query.id;
   const ip = request.connection.remoteAddress;
+  const id = nanoid();
 
   log({ event: "socketConnect", id });
-
-  if (!id) {
-    log({ event: "noClientId" });
-    client.terminate();
-    return;
-  }
-
-  if (clients[id]) {
-    log({ event: "duplicateClient", id });
-    client.terminate();
-    return;
-  }
 
   const timeout = setInterval(() => checkSubs(id), checkInterval);
 
   clients[id] = { client, ip, timeout, subs: [] };
+
+  // send the id to the client over the socket
+  client.send(JSON.stringify({ connect: id }));
+
   client.on("close", async () => {
     log({ event: "socketClose", id });
 
@@ -126,4 +119,4 @@ socketServer.on("connection", async function (client, request) {
   });
 });
 
-log({event: "serverStart", port, redisUrl, checkInterval});
+log({ event: "serverStart", port, redisUrl, checkInterval });

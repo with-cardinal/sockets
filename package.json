@@ -12,7 +12,10 @@
     "type": "git",
     "url": "git+https://github.com/with-cardinal/sockets.git"
   },
-  "keywords": ["ws", "websocket"],
+  "keywords": [
+    "ws",
+    "websocket"
+  ],
   "author": "With Cardinal, LLC",
   "license": "MIT",
   "bugs": {
@@ -22,6 +25,7 @@
   "dependencies": {
     "ioredis": "^4.17.3",
     "lodash": "^4.17.20",
+    "nanoid": "^3.1.12",
     "ws": "^7.3.1"
   },
   "devDependencies": {
