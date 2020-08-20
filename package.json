@@ -12,7 +12,10 @@
     "type": "git",
     "url": "git+https://github.com/with-cardinal/sockets.git"
   },
-  "keywords": ["ws", "websocket"],
+  "keywords": [
+    "ws",
+    "websocket"
+  ],
   "author": "With Cardinal, LLC",
   "license": "MIT",
   "bugs": {
