@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const WebSocket = require("ws");
 const Redis = require("ioredis");
 const url = require("url");
@@ -7,8 +8,12 @@ function log(msg) {
   console.log(JSON.stringify({ at: new Date(), ...msg }));
 }
 
+let port = process.env.PORT || 3002;
+let redisUrl = process.env.REDIS_URL || "redis://localhost:6379"
+let checkInterval = process.env.CHECK_INTERVAL || 10000;
+
 const socketServer = new WebSocket.Server({
-  port: process.env.PORT
+  port
 });
 
 let clients = {};
@@ -16,6 +21,7 @@ let subs = {};
 
 // on process exit, close all connections
 process.on("EXIT", () => {
+  log({event: "serverShutdown"});
   Object.values(clients).forEach(({ client }) => {
     client.close();
   });
@@ -23,10 +29,12 @@ process.on("EXIT", () => {
 
 function subscribe(channel, clientId) {
   subs[channel] = uniq([...(subs[channel] || []), clientId]);
+  clients[clientId].subs = uniq([...client.subs, channel]);
 }
 
 function unsubscribe(channel, clientId) {
   subs[channel] = (subs[channel] || []).filter(id => id !== clientId);
+  clients[clientId].subs =  clients[clientId].subs.filter(id => id !== channel);
 }
 
 function send(channel, msgString) {
@@ -43,7 +51,15 @@ function send(channel, msgString) {
   }
 }
 
-const redis = new Redis(process.env.REDIS_URL);
+// if subs is empty, disconnect the client
+function checkSubs(clientId) {
+  if (clients[clientId].subs.length === 0) {
+    log({event: "noSubs", clientId});
+    clients[clientId].client.terminate();
+  }
+}
+
+const redis = new Redis(redisUrl) ;
 redis.subscribe("socket-broadcast");
 
 // when redis receives a message on socket-broadcast
@@ -62,13 +78,13 @@ redis.on("message", async (channel, message) => {
   const msgString = message.slice(splitAt + 1);
 
   if (msgOp === "0") {
-    log({event: "subscribe", msgChannel, msgString});
+    log({ event: "subscribe", msgChannel, msgString });
     subscribe(msgChannel, msgString);
   } else if (msgOp === "1") {
-    log({event: "unsubscribe", msgChannel, msgString});
+    log({ event: "unsubscribe", msgChannel, msgString });
     unsubscribe(msgChannel, msgString);
   } else if (msgOp === "2") {
-    log({event: "send", msgChannel});
+    log({ event: "send", msgChannel });
     send(msgChannel, msgString);
   }
 });
@@ -93,10 +109,13 @@ socketServer.on("connection", async function (client, request) {
     return;
   }
 
-  clients[id] = { client, ip };
+  const timeout = setInterval(() => checkSubs(id), checkInterval);
+
+  clients[id] = { client, ip, timeout, subs: [] };
   client.on("close", async () => {
     log({ event: "socketClose", id });
 
+    clearInterval(timeout);
     delete clients[id];
   });
 
@@ -106,3 +125,5 @@ socketServer.on("connection", async function (client, request) {
     client.terminate();
   });
 });
+
+log({event: "serverStart", port, redisUrl, checkInterval});
