@@ -4,8 +4,8 @@ RUN addgroup -S sockets && adduser -S sockets -G sockets && \
   mkdir -p /srv/sockets && \
   chown sockets:sockets /srv/sockets
 
-USER sockets
+RUN npm install -g @with-cardinal/sockets
 
-RUN npm install -g sockets
+USER sockets
 
 CMD ["sockets"]
