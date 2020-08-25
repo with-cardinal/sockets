@@ -124,4 +124,4 @@ socketServer.on("connection", async function (client, request) {
   });
 });
 
-log({ event: "serverStart", port, redisUrl, checkInterval });
+log({ event: "serverStart", port, checkInterval });
