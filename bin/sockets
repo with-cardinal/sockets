@@ -3,7 +3,6 @@ const WebSocket = require("ws");
 const Redis = require("ioredis");
 const url = require("url");
 const uniq = require("lodash/uniq");
-const { nanoid } = require("nanoid");
 
 function log(msg) {
   console.log(JSON.stringify({ at: new Date(), ...msg }));
@@ -99,7 +98,7 @@ redis.on("message", async (channel, message) => {
 socketServer.on("connection", async function (client, request) {
   const parsedUrl = url.parse(request.url, true);
   const ip = request.connection.remoteAddress;
-  const id = nanoid();
+  const id = parsedUrl.query.id;
 
   log({ event: "socketConnect", id });
 
