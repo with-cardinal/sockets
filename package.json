@@ -1,6 +1,6 @@
 {
   "name": "@with-cardinal/sockets",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Simple socket server",
   "main": "index.js",
   "bin": "./bin/sockets",
