@@ -51,7 +51,6 @@ function unsubscribeSubscribedTo(channel, subscribedTo) {
     if (clients[clientId]) {
       clients[clientId].subs.filter((sub) => {
         if (sub === channel) {
-          console.log("UNSUB", clientId, sub);
           subs[channel].filter((id) => id !== clientId);
           return false;
         } else {

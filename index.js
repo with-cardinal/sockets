@@ -15,4 +15,5 @@ async function send(redis, channel, msg) {
 async function unsubscribeSubscribedTo(redis, subscribedTo, channel) {
   await redis.publish("socket-broadcast", `3${channel}:${subscribedTo}`);
 }
+
 module.exports = { subscribe, unsubscribe, unsubscribeSubscribedTo, send };
