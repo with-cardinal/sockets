@@ -11,4 +11,8 @@ async function send(redis, channel, msg) {
   await redis.publish("socket-broadcast", `2${channel}:${msgString}`);
 }
 
-module.exports = { subscribe, unsubscribe, send };
+// Unsubscribe any clients who are subscribed to subscribedTo from channel
+async function unsubscribeSubscribedTo(redis, subscribedTo, channel) {
+  await redis.publish("socket-broadcast", `3${channel}:${subscribedTo}`);
+}
+module.exports = { subscribe, unsubscribe, unsubscribeSubscribedTo, send };

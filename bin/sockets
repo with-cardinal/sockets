@@ -13,7 +13,7 @@ let redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 let checkInterval = process.env.CHECK_INTERVAL || 10000;
 
 const socketServer = new WebSocket.Server({
-  port
+  port,
 });
 
 let clients = {};
@@ -36,17 +36,37 @@ function subscribe(channel, clientId) {
 }
 
 function unsubscribe(channel, clientId) {
-  subs[channel] = (subs[channel] || []).filter(id => id !== clientId);
+  subs[channel] = (subs[channel] || []).filter((id) => id !== clientId);
   if (clients[clientId]) {
-    clients[clientId].subs = clients[clientId].subs.filter(id => id !== channel);
+    clients[clientId].subs = clients[clientId].subs.filter(
+      (id) => id !== channel
+    );
   }
+}
+
+function unsubscribeSubscribedTo(channel, subscribedTo) {
+  const checkClients = subs[subscribedTo];
+
+  checkClients.forEach((clientId) => {
+    if (clients[clientId]) {
+      clients[clientId].subs.filter((sub) => {
+        if (sub === channel) {
+          console.log("UNSUB", clientId, sub);
+          subs[channel].filter((id) => id !== clientId);
+          return false;
+        } else {
+          return true;
+        }
+      });
+    }
+  });
 }
 
 function send(channel, msgString) {
   const clientIds = subs[channel];
 
   if (clientIds) {
-    clientIds.forEach(clientId => {
+    clientIds.forEach((clientId) => {
       if (clients[clientId]) {
         clients[clientId].client.send(msgString);
       } else {
@@ -73,7 +93,7 @@ redis.on("message", async (channel, message) => {
   if (splitAt === -1) {
     log({
       event: "invalidRedisMessage",
-      message
+      message,
     });
     return;
   }
@@ -91,6 +111,9 @@ redis.on("message", async (channel, message) => {
   } else if (msgOp === "2") {
     log({ event: "send", msgChannel });
     send(msgChannel, msgString);
+  } else if (msgOp === "3") {
+    log({ event: "unsubscribeSubscribedTo", msgChannel, msgString });
+    unsubscribeSubscribedTo(msgChannel, msgString);
   }
 });
 
@@ -117,7 +140,7 @@ socketServer.on("connection", async function (client, request) {
   });
 
   // error and disconnect if the client sends a message
-  client.on("message", async message => {
+  client.on("message", async (message) => {
     log({ event: "messageReceived", id });
     client.terminate();
   });
