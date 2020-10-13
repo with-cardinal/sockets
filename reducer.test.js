@@ -1,4 +1,4 @@
-const { CONNECT, init, reducer } = require("./reducer");
+const { CONNECT, SUBSCRIBE, init, reducer } = require("./reducer");
 const state = require("./state");
 
 describe("reducer", () => {
@@ -23,5 +23,19 @@ describe("reducer", () => {
       },
       subs: {},
     });
+  });
+
+  describe("SUBSCRIBE", () => {
+    test("ignored when no matching client", () => {
+      const dispatch = state(init(), reducer);
+      const newState = dispatch(SUBSCRIBE, {
+        clientId: "missing",
+        channel: "noise",
+      });
+
+      expect(newState).toEqual({ clients: {}, subs: {} });
+    });
+
+    test("added when matching client", () => {});
   });
 });

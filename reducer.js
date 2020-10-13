@@ -1,4 +1,5 @@
 const state = require("./state");
+const uniq = require("lodash/uniq");
 
 const SUBSCRIBE = Symbol("SUBSCRIBE");
 const UNSUBSCRIBE = Symbol("UNSUBSCRIBE");
@@ -8,6 +9,24 @@ const CONNECT = Symbol("CONNECT");
 function reducer(prev, action, payload) {
   switch (action) {
     case SUBSCRIBE:
+      // ignore unknown clients
+      if (!prev.clients[payload.clientId]) {
+        return prev;
+      }
+
+      return {
+        clients: {
+          ...prev.clients,
+          [payload.clientId]: {
+            ...prev.clients[payload.clientId],
+            subs: uniq([...prev.clients[payload.clientId], channel]),
+          },
+        },
+        subs: {
+          ...prev.subs,
+          [channel]: uniq([...(prev.subs[channel] || []), payload.clientId]),
+        },
+      };
       break;
     case UNSUBSCRIBE:
       break;
