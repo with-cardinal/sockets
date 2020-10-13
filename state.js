@@ -1,3 +1,4 @@
+// really simple state management
 function state(init, reducer) {
   let internalState = init;
 
