@@ -3,12 +3,22 @@ const WebSocket = require("ws");
 const Redis = require("ioredis");
 const url = require("url");
 const uniq = require("lodash/uniq");
+const state = require("../state");
+const {
+  CONNECT,
+  SUBSCRIBE,
+  UNSUBSCRIBE,
+  UNSUBSCRIBE_SUBSCRIBED_TO,
+  REMOVE_CLIENT,
+  init,
+  reducer,
+} = require("../reducer");
 
 function log(msg) {
   console.log(JSON.stringify({ at: new Date(), ...msg }));
 }
 
-let port = process.env.PORT || 3002;
+let port = process.env.PORT || 3003;
 let redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 let checkInterval = process.env.CHECK_INTERVAL || 10000;
 
@@ -16,60 +26,26 @@ const socketServer = new WebSocket.Server({
   port,
 });
 
-let clients = {};
-let subs = {};
+let currentState = init();
+const dispatch = state(currentState, reducer);
 
 // on process exit, close all connections
 process.on("EXIT", () => {
   log({ event: "serverShutdown" });
-  Object.values(clients).forEach(({ client }) => {
+  Object.values(currentState.clients).forEach(({ client }) => {
     client.close();
   });
 });
 
-function subscribe(channel, clientId) {
-  subs[channel] = uniq([...(subs[channel] || []), clientId]);
-
-  if (clients[clientId]) {
-    clients[clientId].subs = uniq([...clients[clientId].subs, channel]);
-  }
-}
-
-function unsubscribe(channel, clientId) {
-  subs[channel] = (subs[channel] || []).filter((id) => id !== clientId);
-  if (clients[clientId]) {
-    clients[clientId].subs = clients[clientId].subs.filter(
-      (id) => id !== channel
-    );
-  }
-}
-
-function unsubscribeSubscribedTo(channel, subscribedTo) {
-  const checkClients = subs[subscribedTo];
-
-  checkClients.forEach((clientId) => {
-    if (clients[clientId]) {
-      clients[clientId].subs.filter((sub) => {
-        if (sub === channel) {
-          subs[channel].filter((id) => id !== clientId);
-          return false;
-        } else {
-          return true;
-        }
-      });
-    }
-  });
-}
-
 function send(channel, msgString) {
-  const clientIds = subs[channel];
+  const clientIds = currentState.subs[channel];
 
   if (clientIds) {
     clientIds.forEach((clientId) => {
-      if (clients[clientId]) {
-        clients[clientId].client.send(msgString);
+      if (currentState.clients[clientId]) {
+        currentState.clients[clientId].client.send(msgString);
       } else {
-        unsubscribe(channel, clientId);
+        currentState = dispatch(UNSUBSCRIBE, { channel, clientId });
       }
     });
   }
@@ -77,9 +53,9 @@ function send(channel, msgString) {
 
 // if subs is empty, disconnect the client
 function checkSubs(clientId) {
-  if (clients[clientId].subs.length === 0) {
+  if (currentState.clients[clientId].subs.length === 0) {
     log({ event: "noSubs", clientId });
-    clients[clientId].client.terminate();
+    currentState.clients[clientId].client.terminate();
   }
 }
 
@@ -103,16 +79,39 @@ redis.on("message", async (channel, message) => {
 
   if (msgOp === "0") {
     log({ event: "subscribe", msgChannel, msgString });
-    subscribe(msgChannel, msgString);
+    currentState = dispatch(SUBSCRIBE, {
+      channel: msgChannel,
+      clientId: msgString,
+    });
   } else if (msgOp === "1") {
     log({ event: "unsubscribe", msgChannel, msgString });
-    unsubscribe(msgChannel, msgString);
+    currentState = dispatch(UNSUBSCRIBE, {
+      channel: msgChannel,
+      clientId: msgString,
+    });
   } else if (msgOp === "2") {
     log({ event: "send", msgChannel });
     send(msgChannel, msgString);
   } else if (msgOp === "3") {
     log({ event: "unsubscribeSubscribedTo", msgChannel, msgString });
-    unsubscribeSubscribedTo(msgChannel, msgString);
+    currentState = dispatch(UNSUBSCRIBE_SUBSCRIBED_TO, {
+      channel: msgChannel,
+      subscribedTo: msgString,
+    });
+  } else if (msgOp === "4") {
+    log({ event: "disconnectSubscribedTo", msgChannel });
+    const clientIds = currentState.subs[msgChannel];
+
+    if (clientIds) {
+      clientIds.forEach((clientId) => {
+        if (
+          currentState.clients[clientId] &&
+          currentState.clients[clientId].connection
+        ) {
+          currentState.clients[clientId].connection.close();
+        }
+      });
+    }
   }
 });
 
@@ -126,7 +125,7 @@ socketServer.on("connection", async function (client, request) {
 
   const timeout = setInterval(() => checkSubs(id), checkInterval);
 
-  clients[id] = { client, ip, timeout, subs: [] };
+  currentState = dispatch(CONNECT, { id, client, ip, timeout });
 
   // send the id to the client over the socket
   client.send(JSON.stringify({ connect: id }));
@@ -135,7 +134,7 @@ socketServer.on("connection", async function (client, request) {
     log({ event: "socketClose", id });
 
     clearInterval(timeout);
-    delete clients[id];
+    currentState = dispatch(REMOVE_CLIENT, { id });
   });
 
   // error and disconnect if the client sends a message

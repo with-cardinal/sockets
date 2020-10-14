@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node ./bin/sockets",
     "test": "jest --watch",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push && git push --tags",
+    "citest": "jest"
   },
   "repository": {
     "type": "git",
@@ -30,6 +31,7 @@
     "ws": "^7.3.1"
   },
   "devDependencies": {
+    "jest": "^26.5.3",
     "prettier": "^2.0.5"
   }
 }

@@ -12,3 +12,4 @@ jobs:
       - name: Test
         run: |
           npm install
+          npm run citest
