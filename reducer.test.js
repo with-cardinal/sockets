@@ -3,6 +3,7 @@ const {
   SUBSCRIBE,
   UNSUBSCRIBE,
   UNSUBSCRIBE_SUBSCRIBED_TO,
+  REMOVE_CLIENT,
   init,
   reducer,
 } = require("./reducer");
@@ -191,6 +192,26 @@ describe("reducer", () => {
           racket: [],
         },
       });
+    });
+  });
+
+  describe("REMOVE_CLIENT", () => {
+    const initialState = {
+      clients: {
+        testId: {
+          client: "testClient",
+          ip: "testIp",
+          timeout: "testTimeout",
+          subs: [],
+        },
+      },
+      subs: {},
+    };
+
+    test("removes the client", () => {
+      const dispatch = state(initialState, reducer);
+      const newState = dispatch(REMOVE_CLIENT, { id: "testId" });
+      expect(newState).toEqual({ clients: {}, subs: {} });
     });
   });
 });

@@ -5,6 +5,7 @@ const SUBSCRIBE = Symbol("SUBSCRIBE");
 const UNSUBSCRIBE = Symbol("UNSUBSCRIBE");
 const UNSUBSCRIBE_SUBSCRIBED_TO = Symbol("UNSUBSCRIBE_SUBSCRIBED_TO");
 const CONNECT = Symbol("CONNECT");
+const REMOVE_CLIENT = Symbol("REMOVE_CLIENT");
 
 function reducer(prev, action, payload) {
   switch (action) {
@@ -111,6 +112,14 @@ function reducer(prev, action, payload) {
         },
       };
       break;
+    case REMOVE_CLIENT:
+      return {
+        ...prev,
+        clients: {
+          ...prev.clients,
+          [payload.id]: undefined,
+        },
+      };
     default:
       return prev;
   }
@@ -127,4 +136,5 @@ module.exports = {
   UNSUBSCRIBE,
   UNSUBSCRIBE_SUBSCRIBED_TO,
   CONNECT,
+  REMOVE_CLIENT,
 };
