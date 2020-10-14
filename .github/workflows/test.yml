@@ -11,5 +11,5 @@ jobs:
           node-version: "12.13.1"
       - name: Test
         run: |
-          npm citest
+          npm run citest
           npm install
