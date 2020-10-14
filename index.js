@@ -16,4 +16,15 @@ async function unsubscribeSubscribedTo(redis, subscribedTo, channel) {
   await redis.publish("socket-broadcast", `3${channel}:${subscribedTo}`);
 }
 
-module.exports = { subscribe, unsubscribe, unsubscribeSubscribedTo, send };
+// Disconnect any clients subscribed to a specific channel
+async function disconnectSubscribedTo(redis, subscribedTo) {
+  await redis.publish("socket-broadcast", `4${subscribedTo}:`);
+}
+
+module.exports = {
+  subscribe,
+  unsubscribe,
+  unsubscribeSubscribedTo,
+  disconnectSubscribedTo,
+  send,
+};
