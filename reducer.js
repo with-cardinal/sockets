@@ -113,12 +113,25 @@ function reducer(prev, action, payload) {
       };
       break;
     case REMOVE_CLIENT:
+      if (!prev.clients[payload.id]) {
+        return prev;
+      }
+
+      const clientSubs = prev.clients[payload.id].subs;
+      const newSubs = { ...prev.subs };
+      Object.keys(prev.subs).forEach((key) => {
+        if (clientSubs.includes(key)) {
+          newSubs[key] = prev.subs[key].filter((id) => id !== payload.id);
+        }
+      });
+
+      const newClients = { ...prev.clients };
+      delete newClients[payload.id];
+
       return {
         ...prev,
-        clients: {
-          ...prev.clients,
-          [payload.id]: undefined,
-        },
+        clients: newClients,
+        subs: newSubs,
       };
     default:
       return prev;

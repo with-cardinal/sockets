@@ -202,16 +202,18 @@ describe("reducer", () => {
           client: "testClient",
           ip: "testIp",
           timeout: "testTimeout",
-          subs: [],
+          subs: ["noise"],
         },
       },
-      subs: {},
+      subs: {
+        noise: ["testId"],
+      },
     };
 
     test("removes the client", () => {
       const dispatch = state(initialState, reducer);
       const newState = dispatch(REMOVE_CLIENT, { id: "testId" });
-      expect(newState).toEqual({ clients: {}, subs: {} });
+      expect(newState).toEqual({ clients: {}, subs: { noise: [] } });
     });
   });
 });
