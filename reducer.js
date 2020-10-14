@@ -19,16 +19,50 @@ function reducer(prev, action, payload) {
           ...prev.clients,
           [payload.clientId]: {
             ...prev.clients[payload.clientId],
-            subs: uniq([...prev.clients[payload.clientId], channel]),
+            subs: uniq([
+              ...prev.clients[payload.clientId].subs,
+              payload.channel,
+            ]),
           },
         },
         subs: {
           ...prev.subs,
-          [channel]: uniq([...(prev.subs[channel] || []), payload.clientId]),
+          [payload.channel]: uniq([
+            ...(prev.subs[payload.channel] || []),
+            payload.clientId,
+          ]),
         },
       };
       break;
     case UNSUBSCRIBE:
+      // ignore unknown clients
+      if (!prev.clients[payload.clientId]) {
+        return prev;
+      }
+
+      // ignore unknown channels
+      if (!prev.subs[payload.channel]) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        clients: {
+          ...prev.clients,
+          [payload.clientId]: {
+            ...prev.clients[payload.clientId],
+            subs: prev.clients[payload.clientId].subs.filter(
+              (sub) => sub !== payload.channel
+            ),
+          },
+        },
+        subs: {
+          ...prev.subs,
+          [payload.channel]: prev.subs[payload.channel].filter(
+            (sub) => sub !== payload.clientId
+          ),
+        },
+      };
       break;
     case UNSUBSCRIBE_SUBSCRIBED_TO:
       break;
