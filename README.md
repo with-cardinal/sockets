@@ -59,10 +59,11 @@ A simple library is included the NPM package. It includes simple functions
 for communicating with the server. All functions take a valid `Redis` connection
 from [ioredis](https://www.npmjs.com/package/ioredis).
 
-- `subscribe(redis, clientId, channel)` - Subscribes `clientId` to `channel`.
-- `unsubscribe(redis, clientId, channel)` - Unsubscribes `clientId` from `channel`.
-- `unsubscribeSubscribedTo(redis, subscribedTo, channel)` - Unsubscribe clients subscribed to `subscribedTo` from `channel`.
-- `send(redis, channel, msg)` - Send msg over `channel`. `msg` is serialized to json before sending.
+- `subscribe(redis, clientId, channel)` - Subscribes `clientId` to `channel`
+- `unsubscribe(redis, clientId, channel)` - Unsubscribes `clientId` from `channel`
+- `unsubscribeSubscribedTo(redis, subscribedTo, channel)` - Unsubscribe clients subscribed to `subscribedTo` from `channel`
+- `disconnectSubscribedTo(redis, subscribedTo)` - Disconnect clients subscribed to `subscribedTo`
+- `send(redis, channel, msg)` - Send msg over `channel`. `msg` is serialized to json before sending
 
 ## License
 
