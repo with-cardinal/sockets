@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node ./bin/sockets",
     "test": "jest --watch",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push && git push --tags",
+    "citest": "jest",
+    "test": "jest --watch",
   },
   "repository": {
     "type": "git",
