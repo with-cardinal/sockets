@@ -74,21 +74,21 @@ describe("reducer", () => {
   });
 
   describe("UNSUBSCRIBE", () => {
-    test("ignored when unknown client", () => {
-      const initialState = {
-        clients: {
-          testId: {
-            client: "testClient",
-            ip: "testIp",
-            timeout: "testTimeout",
-            subs: ["noise"],
-          },
+    const initialState = {
+      clients: {
+        testId: {
+          client: "testClient",
+          ip: "testIp",
+          timeout: "testTimeout",
+          subs: ["noise"],
         },
-        subs: {
-          noise: ["testId"],
-        },
-      };
+      },
+      subs: {
+        noise: ["testId"],
+      },
+    };
 
+    test("ignored when unknown client", () => {
       const dispatch = state(initialState, reducer);
 
       const newState = dispatch(UNSUBSCRIBE, {
@@ -100,20 +100,6 @@ describe("reducer", () => {
     });
 
     test("ignored when unknown channel", () => {
-      const initialState = {
-        clients: {
-          testId: {
-            client: "testClient",
-            ip: "testIp",
-            timeout: "testTimeout",
-            subs: ["noise"],
-          },
-        },
-        subs: {
-          noise: ["testId"],
-        },
-      };
-
       const dispatch = state(initialState, reducer);
 
       const newState = dispatch(UNSUBSCRIBE, {
@@ -125,20 +111,6 @@ describe("reducer", () => {
     });
 
     test("removes sub", () => {
-      const initialState = {
-        clients: {
-          testId: {
-            client: "testClient",
-            ip: "testIp",
-            timeout: "testTimeout",
-            subs: ["noise"],
-          },
-        },
-        subs: {
-          noise: ["testId"],
-        },
-      };
-
       const dispatch = state(initialState, reducer);
 
       const newState = dispatch(UNSUBSCRIBE, {
@@ -157,6 +129,66 @@ describe("reducer", () => {
         },
         subs: {
           noise: [],
+        },
+      });
+    });
+  });
+
+  describe("UNSUBSCRIBE_SUBSCRIBED_TO", () => {
+    const initialState = {
+      clients: {
+        testId: {
+          client: "testClient",
+          ip: "testIp",
+          timeout: "testTimeout",
+          subs: ["noise", "racket"],
+        },
+      },
+      subs: {
+        noise: ["testId"],
+        racket: ["testId"],
+      },
+    };
+
+    test("ignores missing subscribedTo", () => {
+      const dispatch = state(initialState, reducer);
+      const newState = dispatch(UNSUBSCRIBE_SUBSCRIBED_TO, {
+        subscribedTo: "missing",
+        channel: "racket",
+      });
+
+      expect(newState).toEqual(initialState);
+    });
+
+    test("ignores missing channel", () => {
+      const dispatch = state(initialState, reducer);
+      const newState = dispatch(UNSUBSCRIBE_SUBSCRIBED_TO, {
+        subscribedTo: "noise",
+        channel: "missing",
+      });
+
+      expect(newState).toEqual(initialState);
+    });
+
+    test("unsubscribes", () => {
+      const dispatch = state(initialState, reducer);
+      const newState = dispatch(UNSUBSCRIBE_SUBSCRIBED_TO, {
+        subscribedTo: "noise",
+        channel: "racket",
+      });
+
+      expect(newState).toEqual({
+        clients: {
+          testId: {
+            client: "testClient",
+            ip: "testIp",
+            timeout: "testTimeout",
+            subs: ["noise"],
+          },
+        },
+        subs: {
+          noise: ["testId"],
+          racket: [],
         },
       });
     });

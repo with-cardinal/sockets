@@ -65,6 +65,37 @@ function reducer(prev, action, payload) {
       };
       break;
     case UNSUBSCRIBE_SUBSCRIBED_TO:
+      // ignore unknown subscribedTo
+      if (!prev.subs[payload.subscribedTo]) {
+        return prev;
+      }
+
+      // ignore unknown channel
+      if (!prev.subs[payload.channel]) {
+        return prev;
+      }
+
+      const next = { ...prev };
+      const checkClients = next.subs[payload.subscribedTo];
+
+      checkClients.forEach((clientId) => {
+        if (next.clients[clientId]) {
+          next.clients[clientId].subs = next.clients[clientId].subs.filter(
+            (sub) => {
+              if (sub === payload.channel) {
+                next.subs[payload.channel] = next.subs[payload.channel].filter(
+                  (id) => id !== clientId
+                );
+                return false;
+              } else {
+                return true;
+              }
+            }
+          );
+        }
+      });
+
+      return next;
       break;
     case CONNECT:
       return {
