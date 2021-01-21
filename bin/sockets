@@ -53,7 +53,7 @@ function send(channel, msgString) {
 
 // if subs is empty, disconnect the client
 function checkSubs(clientId) {
-  if (currentState.clients[clientId].subs.length === 0) {
+  if (currentState.clients[clientId] && currentState.clients[clientId].subs.length === 0) {
     log({ event: "noSubs", clientId });
     currentState.clients[clientId].client.terminate();
   }
