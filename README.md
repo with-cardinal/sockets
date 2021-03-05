@@ -22,8 +22,10 @@ The server supports the following configuration options, though environment
 variables:
 
 - `PORT`: The port that the socket server should listen on. Defaults to `3002`.
-- `REDIS_URL`: The redis connection string to use. Defaults to `redis://localhost:6379`
-- `CHECK_INTERVAL`: The interval at which to check for subscriptions, in milliseconds. Defaults to `10000`.
+- `REDIS_URL`: The redis connection string to use. Defaults to
+  `redis://localhost:6379`
+- `CHECK_INTERVAL`: The interval at which to check for subscriptions, in
+  milliseconds. Defaults to `10000`.
 
 ## Core Concepts
 
@@ -55,15 +57,19 @@ Sockets implements two techniques for avoiding unwanted clients:
 
 ## Library Documentation
 
-A simple library is included the NPM package. It includes simple functions
-for communicating with the server. All functions take a valid `Redis` connection
+A simple library is included the NPM package. It includes simple functions for
+communicating with the server. All functions take a valid `Redis` connection
 from [ioredis](https://www.npmjs.com/package/ioredis).
 
 - `subscribe(redis, clientId, channel)` - Subscribes `clientId` to `channel`
-- `unsubscribe(redis, clientId, channel)` - Unsubscribes `clientId` from `channel`
-- `unsubscribeSubscribedTo(redis, subscribedTo, channel)` - Unsubscribe clients subscribed to `subscribedTo` from `channel`
-- `disconnectSubscribedTo(redis, subscribedTo)` - Disconnect clients subscribed to `subscribedTo`
-- `send(redis, channel, msg)` - Send msg over `channel`. `msg` is serialized to json before sending
+- `unsubscribe(redis, clientId, channel)` - Unsubscribes `clientId` from
+  `channel`
+- `unsubscribeSubscribedTo(redis, subscribedTo, channel)` - Unsubscribe clients
+  subscribed to `subscribedTo` from `channel`
+- `disconnectSubscribedTo(redis, subscribedTo)` - Disconnect clients subscribed
+  to `subscribedTo`
+- `send(redis, channel, msg)` - Send msg over `channel`. `msg` is serialized to
+  json before sending
 
 ## License
 
