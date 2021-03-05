@@ -1,5 +1,5 @@
 import { acceptWebSocket, serve } from "./deps.ts";
-import { handleWs } from "./handle-ws.ts";
+import handleWs from "./handle-ws.ts";
 
 const port = Deno.env.get("PORT") || "3002";
 
@@ -8,7 +8,7 @@ for await (const req of serve(`:${port}`)) {
   acceptWebSocket({ conn, bufReader, bufWriter, headers }).then(handleWs).catch(
     async (e) => {
       console.error(`failed to accept websocket: ${e}`);
-      await req.response({ status: 400 });
+      await req.respond({ status: 400 });
     },
   );
 }
