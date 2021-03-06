@@ -1,16 +1,30 @@
-import { acceptWebSocket, serve } from "./deps.ts";
+import { acceptWebSocket, redisConnect, redisParseURL, serve } from "./deps.ts";
 import handleWs from "./handle-ws.ts";
 
-const port = Deno.env.get("PORT") || "3002";
-
-for await (const req of serve(`:${port}`)) {
-  const { conn, r: bufReader, w: bufWriter, headers } = req;
-  acceptWebSocket({ conn, bufReader, bufWriter, headers }).then(handleWs).catch(
-    async (e) => {
-      console.error(`failed to accept websocket: ${e}`);
-      await req.respond({ status: 400 });
-    },
-  );
+async function socketLoop(port: string) {
+  for await (const req of serve(`:${port}`)) {
+    const { conn, r: bufReader, w: bufWriter, headers } = req;
+    acceptWebSocket({ conn, bufReader, bufWriter, headers }).then(handleWs)
+      .catch(
+        async (e) => {
+          console.error(`failed to accept websocket: ${e}`);
+          await req.respond({ status: 400 });
+        },
+      );
+  }
 }
 
-console.log("Started on ");
+const port = Deno.env.get("PORT") || "3002";
+const redisUrl = Deno.env.get("REDIS_URL") || "";
+const checkInterval = Number(Deno.env.get("CHECK_INTERVAL")) || 10000;
+
+let redis;
+try {
+  redis = await redisConnect(redisParseURL(redisUrl));
+} catch (ex) {
+  console.error("Redis connect error:", ex);
+  Deno.exit(1);
+}
+
+console.log(`Listening on ${port}`);
+socketLoop(port);
