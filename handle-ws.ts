@@ -1,7 +1,13 @@
 import { isWebSocketCloseEvent, WebSocket } from "./deps.ts";
+import State from "./state.ts";
 
-export default async function handleWs(sock: WebSocket): Promise<void> {
-  console.log("socket connected");
+export default async function handleWs(
+  clientId: string,
+  sock: WebSocket,
+  state: State,
+): Promise<void> {
+  state.connect(clientId, sock);
+
   try {
     for await (const ev of sock) {
       if (isWebSocketCloseEvent(ev)) {
