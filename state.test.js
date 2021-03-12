@@ -6,7 +6,6 @@ function reduce(prev, action, payload) {
   switch (action) {
     case SET_NAME:
       return { name: payload.name };
-      break;
   }
 
   return prev;
