@@ -1,22 +1,9 @@
 #!/usr/bin/env node
 const WebSocket = require("ws");
 const Redis = require("ioredis");
-const url = require("url");
-const uniq = require("lodash/uniq");
-const state = require("../state");
-const {
-  CONNECT,
-  SUBSCRIBE,
-  UNSUBSCRIBE,
-  UNSUBSCRIBE_SUBSCRIBED_TO,
-  REMOVE_CLIENT,
-  init,
-  reducer,
-} = require("../reducer");
 
-function log(msg) {
-  console.log(JSON.stringify({ at: new Date(), ...msg }));
-}
+import State from "../state";
+import log from "../log";
 
 let port = process.env.PORT || 3003;
 let redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
@@ -26,38 +13,13 @@ const socketServer = new WebSocket.Server({
   port,
 });
 
-let currentState = init();
-const dispatch = state(currentState, reducer);
+let state = new State();
 
 // on process exit, close all connections
 process.on("EXIT", () => {
   log({ event: "serverShutdown" });
-  Object.values(currentState.clients).forEach(({ client }) => {
-    client.close();
-  });
+  state.disconnectAll();
 });
-
-function send(channel, msgString) {
-  const clientIds = currentState.subs[channel];
-
-  if (clientIds) {
-    clientIds.forEach((clientId) => {
-      if (currentState.clients[clientId]) {
-        currentState.clients[clientId].client.send(msgString);
-      } else {
-        currentState = dispatch(UNSUBSCRIBE, { channel, clientId });
-      }
-    });
-  }
-}
-
-// if subs is empty, disconnect the client
-function checkSubs(clientId) {
-  if (currentState.clients[clientId] && currentState.clients[clientId].subs.length === 0) {
-    log({ event: "noSubs", clientId });
-    currentState.clients[clientId].client.terminate();
-  }
-}
 
 const redis = new Redis(redisUrl);
 redis.subscribe("socket-broadcast");
@@ -79,53 +41,32 @@ redis.on("message", async (channel, message) => {
 
   if (msgOp === "0") {
     log({ event: "subscribe", msgChannel, msgString });
-    currentState = dispatch(SUBSCRIBE, {
-      channel: msgChannel,
-      clientId: msgString,
-    });
+    state.subscribe(msgChannel, msgString);
   } else if (msgOp === "1") {
     log({ event: "unsubscribe", msgChannel, msgString });
-    currentState = dispatch(UNSUBSCRIBE, {
-      channel: msgChannel,
-      clientId: msgString,
-    });
+    state.unsubscribe(msgChannel, msgString);
   } else if (msgOp === "2") {
     log({ event: "send", msgChannel });
-    send(msgChannel, msgString);
+    state.send(msgChannel, msgString);
   } else if (msgOp === "3") {
     log({ event: "unsubscribeSubscribedTo", msgChannel, msgString });
-    currentState = dispatch(UNSUBSCRIBE_SUBSCRIBED_TO, {
-      channel: msgChannel,
-      subscribedTo: msgString,
-    });
+    state.unsubscribeSubscribedTo(msgChannel, msgString);
   } else if (msgOp === "4") {
     log({ event: "disconnectSubscribedTo", msgChannel });
-    const clientIds = currentState.subs[msgChannel];
-
-    if (clientIds) {
-      clientIds.forEach((clientId) => {
-        if (
-          currentState.clients[clientId] &&
-          currentState.clients[clientId].connection
-        ) {
-          currentState.clients[clientId].connection.close();
-        }
-      });
-    }
+    state.disconnectSubscribedTo(msgChannel);
   }
 });
 
 // handle server clients
 socketServer.on("connection", async function (client, request) {
-  const parsedUrl = url.parse(request.url, true);
+  const parsedUrl = new URL(request.url);
   const ip = request.connection.remoteAddress;
   const id = parsedUrl.query.id;
 
   log({ event: "socketConnect", id });
 
-  const timeout = setInterval(() => checkSubs(id), checkInterval);
-
-  currentState = dispatch(CONNECT, { id, client, ip, timeout });
+  const timeout = setInterval(() => state.checkSubs(id), checkInterval);
+  state.connect(id, client, ip, timeout);
 
   // send the id to the client over the socket
   client.send(JSON.stringify({ connect: id }));
@@ -134,11 +75,11 @@ socketServer.on("connection", async function (client, request) {
     log({ event: "socketClose", id });
 
     clearInterval(timeout);
-    currentState = dispatch(REMOVE_CLIENT, { id });
+    state.removeClient(id);
   });
 
   // error and disconnect if the client sends a message
-  client.on("message", async (message) => {
+  client.on("message", async () => {
     log({ event: "messageReceived", id });
     client.terminate();
   });
