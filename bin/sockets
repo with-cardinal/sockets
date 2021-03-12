@@ -2,7 +2,6 @@
 const WebSocket = require("ws");
 const Redis = require("ioredis");
 const url = require("url");
-const uniq = require("lodash/uniq");
 const state = require("../state");
 const {
   CONNECT,
@@ -53,7 +52,10 @@ function send(channel, msgString) {
 
 // if subs is empty, disconnect the client
 function checkSubs(clientId) {
-  if (currentState.clients[clientId] && currentState.clients[clientId].subs.length === 0) {
+  if (
+    currentState.clients[clientId] &&
+    currentState.clients[clientId].subs.length === 0
+  ) {
     log({ event: "noSubs", clientId });
     currentState.clients[clientId].client.terminate();
   }
@@ -138,7 +140,7 @@ socketServer.on("connection", async function (client, request) {
   });
 
   // error and disconnect if the client sends a message
-  client.on("message", async (message) => {
+  client.on("message", async () => {
     log({ event: "messageReceived", id });
     client.terminate();
   });
