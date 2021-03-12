@@ -1,14 +1,5 @@
-// really simple state management
-function state(init, reducer) {
-  let internalState = init;
-
-  return (action, payload) => {
-    internalState = reducer(internalState, action, payload);
-    return internalState;
-  };
-}
-
-module.exports = state;
+import uniq from "lodash/uniq";
+import log from "./log";
 
 export default class State {
   constructor() {
@@ -16,11 +7,66 @@ export default class State {
     this.subs = {};
   }
 
-  subscribe(channel, clientId) { }
+  subscribe(channel, clientId) {
+    // ignore unknown clients
+    if (!this.clients[clientId]) {
+      return;
+    }
 
-  unsubscribe(channel, clientId) { }
+    this.clients[clientId].subs = uniq([
+      ...this.clients[clientId].subs,
+      channel,
+    ]);
+    this.subs[channel] = uniq([...(this.subs[channel] || []), clientId]);
+  }
 
-  unsubscribeSubscribedTo(channel, subscribedTo) { }
+  unsubscribe(channel, clientId) {
+    // ignore unknown clients
+    if (!this.clients[clientId]) {
+      return;
+    }
+
+    // ignore unknown channels
+    if (!this.subs[channel]) {
+      return;
+    }
+
+    this.clients[clientId].subs = this.clients[clientId].subs.filter(
+      (sub) => sub !== channel
+    );
+
+    this.subs[channel] = this.subs[channel].filter((sub) => sub !== clientId);
+  }
+
+  unsubscribeSubscribedTo(channel, subscribedTo) {
+    // ignore unknown subscribedTo
+    if (!this.subs[subscribedTo]) {
+      return;
+    }
+
+    // ignore unknown channel
+    if (!this.subs[channel]) {
+      return;
+    }
+
+    const checkClients = this.subs[subscribedTo];
+    checkClients.forEach((clientId) => {
+      if (this.clients[clientId]) {
+        this.clients[clientId].subs = this.clients[clientId].subs.filter(
+          (sub) => {
+            if (sub === channel) {
+              this.subs[channel] = this.subs[channel].filter(
+                (id) => id !== clientId
+              );
+              return false;
+            } else {
+              return true;
+            }
+          }
+        );
+      }
+    });
+  }
 
   disconnectSubscribedTo(subscribedTo) {
     const clientIds = this.subs[subscribedTo];
@@ -34,9 +80,24 @@ export default class State {
     }
   }
 
-  connect(id, client, ip, timeout) { }
+  connect(id, client, ip, timeout) {
+    this.clients[id] = { client, ip, timeout, subs: [] };
+  }
 
-  removeClient(id) { }
+  removeClient(id) {
+    if (!this.clients[id]) {
+      return;
+    }
+
+    const clientSubs = this.clients[id].subs;
+    Object.keys(this.subs).forEach((key) => {
+      if (clientSubs.includes(key)) {
+        this.subs[key] = this.subs[key].filter((id) => id !== id);
+      }
+    });
+
+    delete this.clients[id];
+  }
 
   disconnectAll() {
     Object.values(this.clients).forEach(({ client }) => {
