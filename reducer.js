@@ -1,4 +1,3 @@
-const state = require("./state");
 const uniq = require("lodash/uniq");
 
 const SUBSCRIBE = Symbol("SUBSCRIBE");
@@ -34,7 +33,7 @@ function reducer(prev, action, payload) {
           ]),
         },
       };
-      break;
+
     case UNSUBSCRIBE:
       // ignore unknown clients
       if (!prev.clients[payload.clientId]) {
@@ -64,7 +63,7 @@ function reducer(prev, action, payload) {
           ),
         },
       };
-      break;
+
     case UNSUBSCRIBE_SUBSCRIBED_TO:
       // ignore unknown subscribedTo
       if (!prev.subs[payload.subscribedTo]) {
@@ -97,7 +96,6 @@ function reducer(prev, action, payload) {
       });
 
       return next;
-      break;
     case CONNECT:
       return {
         ...prev,
@@ -111,7 +109,7 @@ function reducer(prev, action, payload) {
           },
         },
       };
-      break;
+
     case REMOVE_CLIENT:
       if (!prev.clients[payload.id]) {
         return prev;
