@@ -1,0 +1,38 @@
+name: build
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+          check-latest: true
+          registry-url: "https://npm.pkg.github.com"
+
+      - name: Detect tag
+        run: |
+          echo 'TAG<<EOF' >> $GITHUB_ENV
+          git tag --points-at HEAD >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
+
+      - run: npm install
+
+      - run: npm publish --access public
+        if: "startsWith(env.TAG, 'v')"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: |
+          docker build -t withcardinal/sockets:${tag} .
+
+          echo ${{secrets.DOCKER_TOKEN}} | docker login -u thecardinal --password-stdin
+          docker push withcardinal/sockets:${tag}

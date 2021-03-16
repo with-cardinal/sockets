@@ -2,13 +2,15 @@
   "name": "@with-cardinal/sockets",
   "version": "0.1.2",
   "description": "Simple socket server",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "main": "index.js",
   "bin": "./bin/sockets",
   "scripts": {
     "start": "node ./bin/sockets",
-    "test": "jest --watch",
-    "postversion": "git push && git push --tags",
-    "citest": "jest"
+    "test": "jest",
+    "postversion": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
