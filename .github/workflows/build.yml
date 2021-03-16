@@ -32,8 +32,8 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - run: |
-          docker build -t withcardinal/sockets:${tag} .
+          docker build -t withcardinal/sockets:${TAG} .
 
           echo ${{secrets.DOCKER_TOKEN}} | docker login -u thecardinal --password-stdin
-          docker push withcardinal/sockets:${tag}
+          docker push withcardinal/sockets:${TAG}
         if: "startsWith(env.TAG, 'v')"
