@@ -36,3 +36,4 @@ jobs:
 
           echo ${{secrets.DOCKER_TOKEN}} | docker login -u thecardinal --password-stdin
           docker push withcardinal/sockets:${tag}
+        if: "startsWith(env.TAG, 'v')"
