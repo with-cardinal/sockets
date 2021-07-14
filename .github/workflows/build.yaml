@@ -1,0 +1,40 @@
+name: tag
+on:
+  push:
+    branches:
+      - "v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+          check-latest: true
+      - run: npm install -g npm@7
+
+      - name: Detect tag
+        run: |
+          echo 'TAG<<EOF' >> $GITHUB_ENV
+          git tag --points-at HEAD >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
+
+      - run: npm install
+      - run: npm run lint
+
+      - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+        if: "startsWith(env.TAG, 'v')"
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish --access public
+        if: "startsWith(env.TAG, 'v')"
+
+      - name: Publish Docker
+        if: "startsWith(env.TAG, 'v')"
+        run: |
+          docker build -t withcardinal/sockets:${GITHUB_REF:10} .
+
+          echo ${{secrets.DOCKER_TOKEN}} | docker login -u thecardinal --password-stdin
+          docker push withcardinal/sockets:${GITHUB_REF:10}
