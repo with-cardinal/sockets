@@ -4,6 +4,6 @@
     "es2021": true
   },
   "extends": [
-    "@with-cardinal/cardinal"
+    "cardinal"
   ]
 }

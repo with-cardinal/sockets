@@ -33,7 +33,7 @@
     "ws": "^7.5.3"
   },
   "devDependencies": {
-    "@with-cardinal/eslint-config-cardinal": "^1.0.0",
+    "eslint-config-cardinal": "^1.0.1",
     "eslint": "^7.30.0",
     "jest": "^27.0.6"
   }
