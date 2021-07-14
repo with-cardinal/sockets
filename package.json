@@ -27,17 +27,14 @@
   },
   "homepage": "https://github.com/with-cardinal/sockets#readme",
   "dependencies": {
-    "ioredis": "^4.17.3",
-    "lodash": "^4.17.20",
-    "nanoid": "^3.1.12",
-    "ws": "^7.3.1"
+    "ioredis": "^4.27.6",
+    "lodash": "^4.17.21",
+    "nanoid": "^3.1.23",
+    "ws": "^7.5.3"
   },
   "devDependencies": {
-    "eslint": "^7.21.0",
-    "eslint-config-prettier": "^8.1.0",
-    "eslint-plugin-jest": "^24.2.1",
-    "eslint-plugin-prettier": "^3.3.1",
-    "jest": "^26.5.3",
-    "prettier": "^2.2.1"
+    "@with-cardinal/eslint-config-cardinal": "^1.0.0",
+    "eslint": "^7.30.0",
+    "jest": "^27.0.6"
   }
 }
