@@ -23,18 +23,18 @@ redis.on("message", async (channel, message) => {
 
   if (msgOp === "0") {
     log({ event: "subscribe", msgChannel, msgString });
-    state.subscribe(msgChannel, msgString);
+    //state.subscribe(msgChannel, msgString);
   } else if (msgOp === "1") {
     log({ event: "unsubscribe", msgChannel, msgString });
-    state.unsubscribe(msgChannel, msgString);
+    //state.unsubscribe(msgChannel, msgString);
   } else if (msgOp === "2") {
     log({ event: "send", msgChannel });
-    state.send(msgChannel, msgString);
+    //state.send(msgChannel, msgString);
   } else if (msgOp === "3") {
     log({ event: "unsubscribeSubscribedTo", msgChannel, msgString });
-    state.unsubscribeSubscribedTo(msgChannel, msgString);
+    //state.unsubscribeSubscribedTo(msgChannel, msgString);
   } else if (msgOp === "4") {
     log({ event: "disconnectSubscribedTo", msgChannel });
-    state.disconnectSubscribedTo(msgChannel);
+    //state.disconnectSubscribedTo(msgChannel);
   }
 });
