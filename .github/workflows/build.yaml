@@ -1,4 +1,4 @@
-name: tag
+name: build
 on:
   push:
     branches:
