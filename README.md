@@ -1,11 +1,11 @@
-# sockets
+# cardinal-sockets-server
 
 A socket server focused on simplicity.
 
 ## Installing
 
 ```
-npm install -g @with-cardinal/sockets
+npm install -g cardinal-sockets-server
 ```
 
 ## Starting the Server
@@ -13,7 +13,7 @@ npm install -g @with-cardinal/sockets
 The server doesn't take any command line arguments:
 
 ```
-sockets
+cardinal-sockets-server
 ```
 
 ## Configuration
@@ -23,48 +23,58 @@ variables:
 
 - `PORT`: The port that the socket server should listen on. Defaults to `3002`.
 - `REDIS_URL`: The redis connection string to use. Defaults to `redis://localhost:6379`
-- `CHECK_INTERVAL`: The interval at which to check for subscriptions, in milliseconds. Defaults to `10000`.
+- `CHECK_INTERVAL`: The interval in milliseconds that the socket server checks for inactive clients and disconnects them. Defaults to 10000.
+- `SDK_TOKENS`: A comma delimited list of access tokens for SDK clients. Ensure these tokens are long enough to be practically impossible to guess.
 
-## Core Concepts
 
-Sockets delegates as much as possible to other software to ensure that it stays
-simple. The Sockets model is composed of Connections, Subscriptions, and
-Messages.
+## The SDK
 
-Connections are managed each time a new client connects. Upon connection the
-server sends a client id that can be used to subscribe and send messages.
+The SDK allows servers to control what is sent and who can listen on sockets. All requests use a JSON body 
 
-Subscriptions determine what client receives what messages. They are identified
-by a string per channel. When messages are sent they are delivered to specific
-channels.
+### POST /sdk/grant
 
-Messages are sent to channels. The server handles converting the channel to a
-list of subscribed clients and then sends the message to each of those clients.
+Request a grant to access a socket. Returns a client ID.
 
-All communication between the service sending messages is done with Redis
-pub/sub. It provides a convenient and relatively high performance protocol for
-communication.
+Grant must be called before any other operations, since it provides the client ID needed for all other operations.
 
-## Avoiding Unwanted Clients
+Request:
 
-Sockets implements two techniques for avoiding unwanted clients:
+```
+curl https://socket-server.example \
+  --request POST \
+  --header "Content-Type: application/json"
+```
 
-1. It closes connections upon receiving any messages over the websocket.
-2. It closes any connections that do not have any subscriptions. This is checked
-   every `CHECK_INTERVAL` milliseconds.
+Response:
 
-## Library Documentation
+```
+{ "clientID": "6Im7ep6bwkMubh9wojHcv" }
+```
 
-A simple library is included the NPM package. It includes simple functions
-for communicating with the server. All functions take a valid `Redis` connection
-from [ioredis](https://www.npmjs.com/package/ioredis).
+### POST /sdk/subscribe
 
-- `subscribe(redis, clientId, channel)` - Subscribes `clientId` to `channel`
-- `unsubscribe(redis, clientId, channel)` - Unsubscribes `clientId` from `channel`
-- `unsubscribeSubscribedTo(redis, subscribedTo, channel)` - Unsubscribe clients subscribed to `subscribedTo` from `channel`
-- `disconnectSubscribedTo(redis, subscribedTo)` - Disconnect clients subscribed to `subscribedTo`
-- `send(redis, channel, msg)` - Send msg over `channel`. `msg` is serialized to json before sending
+Subscribe client identified by `clientID` to `channel`.
+
+### POST /sdk/unsubscribe
+
+Unsubscribe client identified by `clientID` from  `channel`.
+
+### POST /sdk/send
+
+Send message to channel.
+
+### POST /sdk/unsubscribeSubscribedTo
+
+Find all clients subscribed to `subscribedTo` and disconnect them from `channel`.
+
+### POST /sdk/disconnectSubscribedTo
+
+Find all clients subscribed to `subscribedTo` and disconnect them.
+
+# The Client
+
+Clients simply connect to a websocket on `/client/ws` with a parameter of `clientID`, returned from the `/sdk/grant` endpoint. Then as messages are sent through the server, they're relayed to the client through the websocket.
 
 ## License
 
-Sockets is licensed under the MIT license. See LICENSE for more information.
+cardinal-sockets-server is licensed under the MIT license. See LICENSE for more information.
