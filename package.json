@@ -8,7 +8,7 @@
     "start": "node ./bin/sockets",
     "test": "jest",
     "postversion": "git push && git push --tags",
-    "lint": "eslint *.js",
+    "lint": "eslint src/**/*.js",
     "build": "babel ./src --out-dir dist/ --source-maps true --ignore **/*.test.js"
   },
   "repository": {
